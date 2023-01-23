@@ -43,6 +43,26 @@ func (u *UserRepository) Login(email, password string) (*int, error) {
 	}
 	return &id, nil
 }
+
+func (u *UserRepository) LoginMahasiswa(nrp, password string) (*int, error) {
+	sqlStatement := "SELECT id, password FROM users s LEFT JOIN user_details ud ON s.id = ud.user_id WHERE nrp = $1 "
+	res := u.db.QueryRow(sqlStatement, nrp)
+	var hashedPassword string
+	var id int
+	err := res.Scan(&id, &hashedPassword)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			fmt.Println("Wrong Password")
+		}
+		panic(err)
+	}
+	return &id, nil
+}
+
 func (u *UserRepository) CheckEmail(email string) (bool, error) {
 	sqlStatement := "SELECT count(*) FROM users WHERE email = $1"
 	res := u.db.QueryRow(sqlStatement, email)
@@ -68,6 +88,7 @@ func (u *UserRepository) GetUserData(id int) (*User, error) {
 	err := res.Scan(&user.Id, &user.Name, &user.Email, &user.Role, &user.Nrp, &user.Prodi, &user.Avatar, &user.Company, &user.Program, &user.Batch)
 	return &user, err
 }
+
 func (u *UserRepository) UpdateDetailDataUser(userID, batch int, nrp, prodi, program, company string) error {
 	sqlStmt := `UPDATE user_details SET nrp = $1,prodi = $2,program = $3,company = $4,batch = $5 WHERE user_id = $6`
 	tx, err := u.db.Begin()
@@ -87,8 +108,8 @@ func (u *UserRepository) UpdateDetailDataUser(userID, batch int, nrp, prodi, pro
 }
 
 func (u *UserRepository) InsertUser(name, email, password, role string) (userId, responCode int, err error) {
-	if strings.ToLower(role) != "mahasiswa" && strings.ToLower(role) != "siswa" {
-		return -1, http.StatusBadRequest, errors.New("role must be either 'mahasiswa' or 'siswa'")
+	if strings.ToLower(role) != "mahasiswa" && strings.ToLower(role) != "dosen" {
+		return -1, http.StatusBadRequest, errors.New("role must be either 'mahasiswa' or 'dosen'")
 	}
 
 	isAvailable, err := u.CheckEmail(email)

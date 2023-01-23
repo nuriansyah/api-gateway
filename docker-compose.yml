@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: go_clean_architecture
+      POSTGRES_DB: logbook_mbkm_unpas
     ports:
       - "5432:5432"
     expose:

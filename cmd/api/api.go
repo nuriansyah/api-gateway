@@ -8,17 +8,20 @@ import (
 )
 
 type API struct {
-	userRepo repository.UserRepository
-	postRepo repository.PostRepository
-	router   *gin.Engine
+	commentRepo          repository.CommentsRepository
+	userRepo             repository.UserRepository
+	postRepo             repository.PostRepository
+	mentorshipRepository repository.MentorshipRepository
+	router               *gin.Engine
 }
 
-func NewAPi(userRepo repository.UserRepository, postRepo repository.PostRepository) API {
+func NewAPi(userRepo repository.UserRepository, postRepo repository.PostRepository, mentorshipRepository repository.MentorshipRepository) API {
 	router := gin.Default()
 	api := &API{
-		userRepo: userRepo,
-		postRepo: postRepo,
-		router:   router,
+		userRepo:             userRepo,
+		postRepo:             postRepo,
+		mentorshipRepository: mentorshipRepository,
+		router:               router,
 	}
 
 	config := cors.DefaultConfig()
@@ -29,6 +32,8 @@ func NewAPi(userRepo repository.UserRepository, postRepo repository.PostReposito
 
 	router.POST("/login", api.login)
 	router.POST("/register", api.register)
+	router.GET("/getMentored/:id", api.readMentored)
+	router.GET("/getMentored", api.readMentoreds)
 
 	router.GET("/api/post/:id", api.readPosts)
 	postRouter := router.Group("/api/post", AuthMiddleware())
@@ -47,6 +52,6 @@ func (api *API) Handler() *gin.Engine {
 }
 
 func (api *API) Start() {
-	setPort := config.New("../.env")
+	setPort := config.New(".env")
 	api.Handler().Run(setPort.Get("APP_PORT"))
 }
